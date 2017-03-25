@@ -1,29 +1,20 @@
 import requests
+from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 
+
 def get_craft(mc_item):
-    #print(mc_item)
-    r = requests.get('https://www.minecraftcraftingguide.net/search/?s=%s' % mc_item)
-    #print(r.status_code)
+    url = "https://www.minecraftcraftingguide.net/search/?s=%s" % quote_plus(mc_item)
+    r = requests.get(url)
+    if r.status_code != 200:
+        return "Cannot connect to server"
     soup = BeautifulSoup(r.content, "html.parser")
     craft_recipes = soup.find_all("div", attrs={"class": "craftingContainer"})
-    if craft_recipes == None:
+    if craft_recipes is None:
         return "Cannot find craft recipe"
-    #Sprint(craft_recipe)
     for craft in craft_recipes:
         craft_images = craft.find_all("img")
-        return craft_images
-        bob = dict()
+        resultarray = []
         for craft_image in craft_images:
-
-            print(craft_image.get('alt'))
-            print(craft_image.get('src'))
-            print(craft_image.get('title'))
-        #    return craft_image
-
-    #return craft_recipe
-
-
-#print(get_craft('glass'))
-for craft in get_craft('glass'):
-    print(craft)
+            resultarray.append({'alt': craft_image.get('alt'), 'src': craft_image.get('src'), 'title': craft_image.get('title'), 'url': url})
+        return resultarray
