@@ -1,6 +1,10 @@
 import discord
 import asyncio
+import yaml
 from craft import get_craft
+
+with open("config.yml", 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
 
 client = discord.Client()
 
@@ -15,38 +19,22 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.content.startswith('!test'):
-        counter = 0
-        tmp = await client.send_message(message.channel, 'Calculating messages...')
-        async for log in client.logs_from(message.channel, limit=100):
-            if log.author == message.author:
-                counter += 1
-
-        await client.edit_message(tmp, 'You have {} messages.'.format(counter))
-    elif message.content.startswith('!sleep'):
-        await asyncio.sleep(5)
-        await client.send_message(message.channel, 'Done sleeping')
+    if message.content.startswith('!help'):
+        await client.send_message(message.channel, 'Good to see you , There is a list of available commands:')
+        await client.send_message(message.channel, '\!recipe item : search any corresponding crafting recipe for item')
     elif message.content.startswith('!recipe'):
-        await client.send_message(message.channel, 'What you want to craft Type !recipe item')
+        if message.content[len('!recipe'):].strip() == '':
+            await client.send_message(message.channel, 'Greetings. Wich item you want to craft Type !recipe item')
+        else:
+            craft = message.content[len('!recipe'):].strip()
+            if get_craft(craft) is None:
+                await client.send_message(message.channel, "There is something about this search that troubles me. I cannot find anything")
+            else:
+                await client.send_message(message.channel, "Good to see you! Here is my search result")
+                for result in get_craft(craft):
+                    em = discord.Embed(title=result['title'], description='', url=result['url'], colour=0xDEADBF)
+                    em.set_author(name='www.minecraftcraftingguide.net', icon_url=client.user.default_avatar_url)
+                    em.set_image(url="https:%s" % result['src'])
+                    await client.send_message(message.channel, embed=em)
 
-        def check(msg):
-            return msg.content[len('!recipe'):].strip()
-
-        message = await client.wait_for_message(author=message.author, check=check)
-        craft = message.content[len('!recipe'):].strip()
-        print(craft)
-        get_craft(craft)
-        #print(message.content)
-
-
-        em = discord.Embed(title='Crafting Recipe', description='', url='https://www.minecraftcraftingguide.net/search/?s=wood+slab', colour=0xDEADBF)
-        em.set_author(name='www.minecraftcraftingguide.net', icon_url=client.user.default_avatar_url)
-        em.set_image(url="https://www.minecraftcraftingguide.net/img/crafting/wood-slabs-crafting.gif")
-        await client.send_message(message.channel, embed=em)
-
-
-        #await client.send_message(message.channel, '{}'.format(get_craft(craft)))
-        #await client.
-
-
-client.run('')
+client.run(cfg['api_token'])
